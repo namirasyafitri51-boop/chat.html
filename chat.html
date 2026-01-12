@@ -3,6 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <title>KelasTalk</title>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
   <style>
     body {
       margin: 0;
@@ -14,7 +19,6 @@
       align-items: center;
     }
 
-    /* LOGIN */
     .login-box {
       background: #FFF8EE;
       padding: 30px;
@@ -42,7 +46,6 @@
       cursor: pointer;
     }
 
-    /* CHAT */
     .chat-container {
       width: 400px;
       height: 600px;
@@ -78,14 +81,8 @@
       font-size: 14px;
     }
 
-    .me {
-      background: #D7B899;
-      margin-left: auto;
-    }
-
-    .other {
-      background: white;
-    }
+    .me { background: #D7B899; margin-left: auto; }
+    .other { background: white; }
 
     .system-msg {
       text-align: center;
@@ -110,13 +107,13 @@
     }
   </style>
 </head>
+
 <body>
 
 <!-- LOGIN -->
 <div class="login-box" id="loginBox">
-  <h2>KelasTalk</h2>
+  <h2>SIONE</h2>
   <p>Masuk ke Grup Diskusi Kelas</p>
-
   <input type="text" id="username" placeholder="Nama Anda">
   <input type="password" id="password" placeholder="Password (12345)">
   <button onclick="login()">Masuk</button>
@@ -132,42 +129,46 @@
     <button onclick="logout()">Keluar</button>
   </div>
 
-  <div class="chat-body" id="chatBody">
-    <div class="system-msg" id="welcomeMsg"></div>
-  </div>
+  <div class="chat-body" id="chatBody"></div>
 
   <div class="chat-input">
-    <input type="text" id="message" placeholder="Ketik pesan..." onkeypress="if(event.key==='Enter') sendMessage()">
+    <input type="text" id="message" placeholder="Ketik pesan..." 
+      onkeypress="if(event.key==='Enter') sendMessage()">
     <button onclick="sendMessage()">Kirim</button>
   </div>
 </div>
 
 <script>
+  /* ================= FIREBASE CONFIG ================= */
+  const firebaseConfig = {
+    apiKey: "AIzaSyC90kWHqxwmgwoEquNiaJPHozzH2hJ1xR0",
+    authDomain: "chat-html-41666.firebaseapp.com",
+    projectId: "chat-html-41666",
+    storageBucket: "chat-html-41666.firebasestorage.app",
+    messagingSenderId: "355654617828",
+    appId: "1:355654617828:web:6cadb6b7d6e6b8b3717af1"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  /* ================= CHAT LOGIC ================= */
   const PASSWORD = "12345";
   let currentUser = "";
-  let chatMessages = [];
 
   function login() {
     const user = username.value.trim();
     const pass = password.value;
 
-    if (!user) {
-      alert("Nama wajib diisi");
-      return;
-    }
-
-    if (pass !== PASSWORD) {
-      alert("Password salah");
-      return;
-    }
+    if (!user) return alert("Nama wajib diisi");
+    if (pass !== PASSWORD) return alert("Password salah");
 
     currentUser = user;
     loginBox.style.display = "none";
     chatBox.style.display = "flex";
-
     currentUserDisplay.textContent = "Anda masuk sebagai: " + currentUser;
-    welcomeMsg.textContent = currentUser + " telah bergabung ke chat";
-    loadMessages();
+
+    listenMessages();
   }
 
   function logout() {
@@ -178,37 +179,37 @@
     const text = message.value.trim();
     if (!text) return;
 
-    const msg = {
+    db.collection("messages").add({
       sender: currentUser,
       text: text,
-      time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-    };
-
-    chatMessages.push(msg);
-    saveMessages();
-    renderMessage(msg);
+      time: new Date()
+    });
 
     message.value = "";
-    chatBody.scrollTop = chatBody.scrollHeight;
+  }
+
+  function listenMessages() {
+    db.collection("messages")
+      .orderBy("time")
+      .onSnapshot(snapshot => {
+        chatBody.innerHTML = "";
+        snapshot.forEach(doc => {
+          renderMessage(doc.data());
+        });
+        chatBody.scrollTop = chatBody.scrollHeight;
+      });
   }
 
   function renderMessage(msg) {
     const div = document.createElement("div");
     div.className = "msg " + (msg.sender === currentUser ? "me" : "other");
-    div.innerHTML = `<b>${msg.sender}</b><br>${msg.text}<br><small>${msg.time}</small>`;
+
+    const time = msg.time?.toDate
+      ? msg.time.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+      : "";
+
+    div.innerHTML = `<b>${msg.sender}</b><br>${msg.text}<br><small>${time}</small>`;
     chatBody.appendChild(div);
-  }
-
-  function saveMessages() {
-    localStorage.setItem("kelasTalkChat", JSON.stringify(chatMessages));
-  }
-
-  function loadMessages() {
-    const data = localStorage.getItem("kelasTalkChat");
-    if (data) {
-      chatMessages = JSON.parse(data);
-      chatMessages.forEach(renderMessage);
-    }
   }
 </script>
 
