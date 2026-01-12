@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>KelasTalk</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #8D6E63, #6D4C41);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* LOGIN */
+    .login-box {
+      background: #FFF8EE;
+      padding: 30px;
+      width: 300px;
+      border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+      text-align: center;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 12px;
+      border-radius: 8px;
+      border: 1px solid #BCAAA4;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: #8D6E63;
+      color: white;
+      cursor: pointer;
+    }
+
+    /* CHAT */
+    .chat-container {
+      width: 400px;
+      height: 600px;
+      background: #EFE6D8;
+      border-radius: 14px;
+      display: none;
+      flex-direction: column;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+
+    .chat-header {
+      background: #5D4037;
+      color: white;
+      padding: 12px;
+      border-radius: 14px 14px 0 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .chat-body {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      background: #F5F0E6;
+    }
+
+    .msg {
+      max-width: 75%;
+      padding: 10px;
+      border-radius: 12px;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+
+    .me {
+      background: #D7B899;
+      margin-left: auto;
+    }
+
+    .other {
+      background: white;
+    }
+
+    .system-msg {
+      text-align: center;
+      font-size: 12px;
+      color: #795548;
+      margin-bottom: 10px;
+    }
+
+    .chat-input {
+      display: flex;
+      padding: 12px;
+      background: #D7CCC8;
+      gap: 8px;
+      border-radius: 0 0 14px 14px;
+    }
+
+    .chat-input input {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-box" id="loginBox">
+  <h2>KelasTalk</h2>
+  <p>Masuk ke Grup Diskusi Kelas</p>
+
+  <input type="text" id="username" placeholder="Nama Anda">
+  <input type="password" id="password" placeholder="Password (12345)">
+  <button onclick="login()">Masuk</button>
+</div>
+
+<!-- CHAT -->
+<div class="chat-container" id="chatBox">
+  <div class="chat-header">
+    <div>
+      <strong>Grup Diskusi Kelas</strong><br>
+      <span id="currentUserDisplay"></span>
+    </div>
+    <button onclick="logout()">Keluar</button>
+  </div>
+
+  <div class="chat-body" id="chatBody">
+    <div class="system-msg" id="welcomeMsg"></div>
+  </div>
+
+  <div class="chat-input">
+    <input type="text" id="message" placeholder="Ketik pesan..." onkeypress="if(event.key==='Enter') sendMessage()">
+    <button onclick="sendMessage()">Kirim</button>
+  </div>
+</div>
+
+<script>
+  const PASSWORD = "12345";
+  let currentUser = "";
+  let chatMessages = [];
+
+  function login() {
+    const user = username.value.trim();
+    const pass = password.value;
+
+    if (!user) {
+      alert("Nama wajib diisi");
+      return;
+    }
+
+    if (pass !== PASSWORD) {
+      alert("Password salah");
+      return;
+    }
+
+    currentUser = user;
+    loginBox.style.display = "none";
+    chatBox.style.display = "flex";
+
+    currentUserDisplay.textContent = "Anda masuk sebagai: " + currentUser;
+    welcomeMsg.textContent = currentUser + " telah bergabung ke chat";
+    loadMessages();
+  }
+
+  function logout() {
+    location.reload();
+  }
+
+  function sendMessage() {
+    const text = message.value.trim();
+    if (!text) return;
+
+    const msg = {
+      sender: currentUser,
+      text: text,
+      time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+    };
+
+    chatMessages.push(msg);
+    saveMessages();
+    renderMessage(msg);
+
+    message.value = "";
+    chatBody.scrollTop = chatBody.scrollHeight;
+  }
+
+  function renderMessage(msg) {
+    const div = document.createElement("div");
+    div.className = "msg " + (msg.sender === currentUser ? "me" : "other");
+    div.innerHTML = `<b>${msg.sender}</b><br>${msg.text}<br><small>${msg.time}</small>`;
+    chatBody.appendChild(div);
+  }
+
+  function saveMessages() {
+    localStorage.setItem("kelasTalkChat", JSON.stringify(chatMessages));
+  }
+
+  function loadMessages() {
+    const data = localStorage.getItem("kelasTalkChat");
+    if (data) {
+      chatMessages = JSON.parse(data);
+      chatMessages.forEach(renderMessage);
+    }
+  }
+</script>
+
+</body>
+</html>
